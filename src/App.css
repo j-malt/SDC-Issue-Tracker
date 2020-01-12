@@ -1,3 +1,6 @@
+html {
+  font-family: "montseratt";
+}
 .App {
   text-align: center;
 }
@@ -19,9 +22,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  padding: 10vh;
+  padding-top: 2vh;
   font-size: calc(10px + 2vmin);
   color: white;
+  overflow: hidden;
 }
 
 .App-link {
@@ -35,4 +40,8 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.MuiPaper-root {
+  background: 'red';
 }
