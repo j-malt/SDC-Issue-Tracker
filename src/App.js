@@ -7,8 +7,9 @@ import ReactApexChart from 'react-apexcharts'
 import ApexCharts from 'apexcharts'
 import NetworkGraph from './components/NetworkGraph';
 import TweetStream from './components/TweetStream';
-var chartState = {
 
+//I need to find a workaround for this... Embarassing.
+var chartState = {
 	options: {
 		chart: {
          id: 'realtime',
@@ -17,14 +18,18 @@ var chartState = {
 			zoom: {
 				enabled: false
 			},
+			toolbar: {
+				show: false
+			},
 			animations: {
 				enabled: true,
 				easing: "linear",
 				dynamicAnimation: {
-					speed: 500
+					speed: 1000
 				}
 			}
 		},
+		
 		dataLabels: {
 			enabled: false
 		},
@@ -51,14 +56,15 @@ var chartState = {
 				offsetY: -1.5
 			},
 			xaxis: {
-				type: "datetime",
-				min: new Date().getTime(),
+				type: "numeric",
+				min: 1,
+				max: 15,
 				tickAmount: 6
 			}
 		},
 		tooltip: {
 			x: {
-				format: "dd MMM yyyy"
+				format: "dd MMM yyyy"	
 			}
 		},
 		yaxis: {
@@ -76,6 +82,9 @@ var chartState = {
 		}
 	}
 }
+
+
+
 function fetchData() {
 	return fetch("http://127.0.0.1:5000/", {
 		method: "GET",
@@ -113,6 +122,7 @@ function averageSentiment(dict) {
    return sum / count
 }
 
+
 export default class App extends React.Component {
    constructor(props) {
       super(props)
@@ -128,156 +138,136 @@ export default class App extends React.Component {
 		setInterval(() => ( 
          fetchData().then((data) => {
             var newSentiData = this.state.series[0]['data'];
-            this.state.series[0]['data'].push(averageSentiment(data))
-            var newSiteStatus = this.state.siteStatus
-            newSiteStatus.push(Math.random(95, 100));
-                        
+			this.state.series[0]['data'].push(averageSentiment(data))
+			
+			//Putting Sentiment data in here makes it update twice. Need to update these in the .exec() method.
             this.setState({
                tweets: buildTweets(data),
-               series: [{
-                  name: 'Sentimental',
-                  data: newSentiData
-               }],
-               siteStatus: newSiteStatus
-            });
-            ApexCharts.exec("realtime", "updateSeries", [
-               {
-                  data: newSentiData
-               }
-            ]);
+			});
+			ApexCharts.exec("realtime", "updateSeries", [
+				{
+					data: newSentiData
+				}
+			]);
          }
       )), 5000)
    }
    
-   render() {
-      return (
-				<div className="App">
-					<header className="App-header">
-						<Typography
-							align="center"
-							style={{
-								fontWeight: 700,
-								fontFamily: "Montserrat",
-								paddingBottom: "1vh",
-								fontSize: "1.5em",
-								margin: "none"
-							}}
-						>
-							Social Media Issue Tracker
-						</Typography>
-						<Grid
-							container
-							spacing={8}
-							direction="row"
-							justify="center"
-							alignItems="flex-start"
-						>
-							<Grid style={{ marginBottom: "5vh" }} item xs={4}>
-								<Paper
-									style={{
-										color: "white",
-										background: "#717e99",
-										height: "45vh"
-									}}
-									elevation={10}
-								>
-									<Typography style={{ fontFamily: "Montserrat" }}>
-										Tweet Stream
-									</Typography>
-									{/*0 status means technical issue, 1 means non-technical}*/}
-									<TweetStream tweets={this.state.tweets} />
-								</Paper>
-							</Grid>
-							<Grid item xs={8}>
-								<Paper
-									style={{
-										color: "white",
-										background: "#717e99",
-										height: "45vh"
-									}}
-									elevation={10}
-								>
-									<Typography style={{ fontFamily: "Montserrat" }}>
-										Sentiment Analysis Graph
-									</Typography>
-									{/*
-									<SentimentGraph series={this.state.series} />*/}
-									<Paper
-										style={{
-											background: "#d5dceb",
-											padding: ".05vw",
-											marginRight: "2vw",
-											marginLeft: "2vw",
-											marginBottom: "2vw"
-										}}
-										elevation={5}
-									>
-                              {console.log(this.state.series)}
-										<ReactApexChart
-											options={chartState.options}
-											series={this.state.series}
-											type="area"
-											height={350}
-										/>
-									</Paper>
-								</Paper>
-							</Grid>
+	render() {
+		return (
+			<div className="App">
+				<header className="App-header">
+					<Typography
+						align="center"
+						style={{
+							fontWeight: 700,
+							fontFamily: "Montserrat",
+							paddingBottom: "1vh",
+							fontSize: "1.5em",
+							margin: "none"
+						}}
+					>
+						Social Media Issue Tracker
+					</Typography>
+					<Grid container
+						spacing={8}
+						direction="row"
+						justify="center"
+						alignItems="flex-start">
+
+						<Grid style={{ marginBottom: "5vh" }} item xs={4}>
+							<Paper style={{
+									color: "white",
+									background: "#717e99",
+									height: "45vh"
+								}} elevation={10}>
+
+								<Typography style={{ fontFamily: "Montserrat" }}>
+									Tweet Stream
+								</Typography>
+
+								{/*0 status means technical issue, 1 means non-technical, we'll get there...}*/}
+
+								<TweetStream tweets={this.state.tweets} />
+							</Paper>
 						</Grid>
 
-						<Grid
-							container
-							spacing={8}
-							direction="row"
-							justify="center"
-							alignItems="flex-start"
-						>
-							<Grid item xs={4}>
-								<Paper
-									style={{
-										color: "white",
-										background: "#717e99",
-										height: "30vh"
-									}}
-									elevation={10}
-								>
-									<Typography style={{ fontFamily: "Montserrat" }}>
-										Average Sentiment
-									</Typography>
-									<Paper
-										style={{
-											background: "#d5dceb",
-											padding: "2vw",
-											margin: "2vw"
-										}}
-										elevation={5}
-									>
-										<Typography
-											align="center"
-											style={{ fontSize: "2.5em", fontFamily: "Montserrat" }}
-										>
-											{this.state.series[0]["data"].reverse()[0].toFixed(5)}
-										</Typography>
-									</Paper>
+						<Grid item xs={8}>
+							<Paper style={{
+									color: "white",
+									background: "#717e99",
+									height: "45vh"
+								}} elevation={10}>
+
+								<Typography style={{ fontFamily: "Montserrat" }}>
+									Sentiment Analysis Graph
+								</Typography>
+								
+								<Paper style={{
+										background: "#d5dceb",
+										padding: ".05vw",
+										marginRight: "2vw",
+										marginLeft: "2vw",
+										marginBottom: "2vw"
+									}} elevation={5}>
+
+									<ReactApexChart
+										options={chartState.options}
+										series={[1]}
+										type="area"
+										height={350}/>
 								</Paper>
-							</Grid>
-							<Grid item xs={8}>
-								<Paper
-									style={{
-										color: "white",
-										background: "#717e99",
-										height: "30vh"
-									}}
-									elevation={10}
-								>
-									<Typography style={{ fontFamily: "Montserrat" }}>
-										SCD Network Status Graph
-									</Typography>
-									<NetworkGraph />
-								</Paper>
-							</Grid>
+							</Paper>
 						</Grid>
-					</header>
-				</div>
-			);
-   }
+					</Grid>
+
+					<Grid container
+						spacing={8}
+						direction="row"
+						justify="center"
+						alignItems="flex-start">
+
+						<Grid item xs={4}>
+							<Paper style={{
+								color: "white",
+								background: "#717e99",
+								height: "30vh"}}
+								elevation={10} >
+
+								<Typography style={{ fontFamily: "Montserrat" }}>
+									Average Sentiment
+								</Typography>
+
+								<Paper style={{
+									background: "#d5dceb",
+									padding: "2vw",
+									margin: "2vw"
+									}} elevation={5}>
+
+									<Typography
+										align="center"
+										style={{ fontSize: "2.45em", fontFamily: "Montserrat" }}>
+										{this.state.series[0]["data"].reverse()[0].toFixed(4)}
+									</Typography>
+
+								</Paper>
+							</Paper>
+						</Grid>
+						<Grid item xs={8}>
+							<Paper style={{
+									color: "white",
+									background: "#717e99",
+									height: "30vh"
+								}} elevation={10}>
+								<Typography style={{ fontFamily: "Montserrat" }}>
+									SCD Network Status Graph
+								</Typography>
+								<NetworkGraph />
+							</Paper>
+						</Grid>
+					</Grid>
+				</header>
+			</div>
+		);
+	}
 }
